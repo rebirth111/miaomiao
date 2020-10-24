@@ -81,20 +81,25 @@
 					</ul>
 				</div> -->
 				<div class="city_list">
+					<Loading v-if="isLoading"/>
+					<Scroller v-else ref="city_List">
+						<div>
 					<div class="city_hot">
 						<h2>热门城市</h2>
 						<ul class="clearfix">
-							<li v-for="item in hotList" :key="item.id">{{item.nm}}</li>
+							<li v-for="item in hotList" :key="item.id" @tap="handleToCity(item.nm,item.id)">{{item.nm}}</li>
 						</ul>
 					</div>
 					<div class="city_sort" ref="city_sort">
 						<div v-for="item in cityList" :key="item.index">
 							<h2>{{item.index}}</h2>
 							<ul>
-								<li v-for="itemList in item.list" :key="itemList.id">{{ietmList.nm}}</li>
+								<li v-for="itemList in item.list" :key="itemList.id"  @tap="handleToCity(ietmList.nm,ietmList.id)">{{ietmList.nm}}</li>
 							</ul>
 						</div>
 				    </div>
+					</div>
+					</Scroller>
 			    </div>
 				<div class="city_index">
 					<ul>
@@ -109,20 +114,33 @@ export default {
 	data(){
 		return{
 			cityList:[],
-			hotList:[]
+			hotList:[],
+			isLoading:true
 		}
 	},
 	mounted(){
+
+		var cityList=window.localStorage.getItem('cityList');
+		var hotList=window.localStorage.getItem('hotList');
+		if(cityList && hotList){
+			this.cityList=JSON.parse(cityList);
+			this.hotList=JSON.parse(hotList);
+			this.isLoading=false;
+		}else{
 		this.axios.get(/* '/mmdb/open/tg/pre.json' */).then((res)=>{
 			var msg=res.data.msg;
 			if(msg==='ok'){
+				this.isLoading=false;
 				var data=res.data.data.cities;
 				//[{index:'A',list:[{nm:'阿城',id:123}]}]
 				var {cityList,hotList}= this.formatCityList(cities);
 				this.cityList=cityList,
 				this.hotList=hotList;
+				window.localstorage.setItem('cityList',JSON.stringify(cityList));
+				window.localStorage.setItem('hotList',JSON.stringify(hotList))
 			}
 		})
+		}
 	},
 	methods:{
 		formatCityList(cities){
@@ -175,7 +193,14 @@ export default {
 		},
 		handleToIndex(index){
 			var h2=this.$refs.city_sort.getElementsByTagName('h2');
-			this.$refs.city_sort.parentNode.scrollTop= h2[index].offsetTop;
+			//this.$refs.city_sort.parentNode.scrollTop= h2[index].offsetTop;
+			this.$refs.city_List.toScrollTop(-h2[index].offsetTop)
+		},
+		handleToCity(nm,id){
+			this.$store.commit('city/CITY_INFO',{nm,id});
+			window.localStorage.setItem('nowNm',nm);
+			window.localStorage.setItem('nowId',id);
+			this.$router.push('/movie/nowPlaying')
 		}
 	}
 }
