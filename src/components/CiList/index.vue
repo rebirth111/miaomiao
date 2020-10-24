@@ -1,5 +1,7 @@
 <template>
     <div class="cinema_body">
+		<Loading v-if="isLoading"/>
+		<Scroller v-else>
 				<ul>
 					<!-- <li>
 						<div>
@@ -99,6 +101,7 @@
        					</div>
 					</li>
 				</ul>
+				</Scroller>
 			</div>
 </template>
 <script>
@@ -106,21 +109,28 @@ export default {
     name:'CiList',
 	data(){
 		return{
-			cinemaList:[]
+			cinemaList:[],
+			isLoading:true,
+			prevCityId:-1
 		};
 	},
-	mounted(){
-		this.axios.get('/api/cinemaList?cityId-10').then((res)=>{
+	activated(){
+		var cityId=this.$store.state.city.id;
+		if(this.prevCityId===cityId){return;}
+		this.isLoading=true
+		this.axios.get('/api/cinemaList?cityId='+cityId).then((res)=>{
 			var msg=res.data.msg;
 			if(msg==='ok'){
-				this.cinemaList=res.data.data.cinemas
+				this.cinemaList=res.data.data.cinemas;
+				this.isLoading=false,
+				this.prevCityId=cityId
 			}
 		})
 	},
 	filters:{
 		formatCard(key){
 			var card=[
-				{key:'aliowRefund',value:"改变"},
+				{key:'allowRefund',value:"改签"},
 				{key:'endorse',value:'退'},
 				{key:'sell',value:'折扣卡'},
 				{key:'sanck',value:'小吃'}
@@ -129,9 +139,11 @@ export default {
 				if(card[i].key===key){
 					return card[i].value;
 				}
-				return'';
 			}
-			classCard(key)=[
+			return '';
+		},
+			classCard(key){
+				var card=[
 				{key:'aliowRefund',value:"bl"},
 				{key:'endorse',value:'bl'},
 				{key:'sell',value:'or'},
@@ -141,8 +153,8 @@ export default {
 				if(card[i].key===key){
 					return card[i].value;
 				}
-				return'';
 			}
+			return'';
 		}
 	}
 }
